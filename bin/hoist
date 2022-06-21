@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+
+require 'hoist'
+require 'commander'
+require 'stringio'
+require 'yaml'
+
+# Main Program
+Commander.configure do
+  program :name, 'hoist'
+  program :version, Hoist::VERSION
+  program :description, 'Usage: hoist COMMAND [OPTIONS] PATH(s)'
+  program :help_formatter, :compact
+
+  global_option('-c', '--config FILE', 'Load config data for your commands to use. By default hoist will look for a "settings.yml" file in the current directory.')
+  global_option('-k', '--key FILE', 'Path to your RSA private key in PEM format. Defaults to "~/.ssh/id_rsa"')
+
+  # hoist render [OPTIONS] PATHS
+  command :render do |c|
+    c.syntax = 'hoist render [options] TEMPLATE_PATH'
+    c.description = 'Render the given template file(s) to stdout. If given directory will recursively traverse.'
+
+    c.action do |args, options|
+      Hoist::cmd_render(args, options)
+    end
+  end
+
+  # hoist apply [OPTIONS] PATHS
+  command :apply do |c|
+    c.syntax = 'hoist apply [options] TEMPLATE_PATH'
+    c.description = 'Render the given template file(s) and run kubectl apply on the results. If given directory will recursively traverse.'
+
+    c.action do |args, options|
+      Hoist::cmd_apply(args, options)
+    end
+  end
+
+  # hoist delete [OPTIONS] PATHS
+  command :delete do |c|
+    c.syntax = 'hoist delete [options] TEMPLATE_PATH'
+    c.description = 'Render the given template file(s) and run kubectl delete on the results. If given directory will recursively traverse.'
+
+    c.action do |args, options|
+      Hoist::cmd_delete(args, options)
+    end
+  end
+
+  # hoist encrypt [OPTIONS] OUTPUT_FILE
+  command :encrypt do |c|
+    c.syntax = 'hoist encrypt [options] OUTPUT_FILE'
+    c.description = 'Encrypt the contents of the config file using an RSA public key. If no config file option was specified the command will look for a "settings.yml" file in the current directory. If not OUTPUT_FILE was specified, the command will print the encrypted content to stdout.'
+    c.option '--passphrase', String, 'Passphrase protecting the RSA key pair. If not specified, will prompt to input.'
+
+    c.action do |args, options|
+      Hoist::cmd_encrypt(args, options)
+    end
+  end
+
+  # hoist decrypt [OPTIONS] OUTPUT_FILE
+  command :decrypt do |c|
+    c.syntax = 'hoist decrypt [options] OUTPUT_FILE'
+    c.description = 'Decrypt the contents of the config file using an RSA private key. If no config file option was specified the command will look for a "settings.yml" file in the current directory. If not OUTPUT_FILE was specified, the command will print the encrypted content to stdout.'
+    c.option '--passphrase', String, 'Passphrase protecting the RSA private key. If not specified, will prompt to input.'
+
+    c.action do |args, options|
+      Hoist::cmd_decrypt(args, options)
+    end
+  end
+
+end
